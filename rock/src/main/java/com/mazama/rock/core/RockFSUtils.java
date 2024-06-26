@@ -9,7 +9,7 @@ public class RockFSUtils {
    * Rock File System Type
    */
   public enum RockFSType {
-    HIVE
+    HIVE, Local
   }
 
   /**
@@ -34,6 +34,10 @@ public class RockFSUtils {
   public static RockFS mount(RockFSType rockFSType, String mountPoint, String... args) {
     if (Objects.requireNonNull(rockFSType) == RockFSType.HIVE) {
       return HiveFSUtils.mount(mountPoint, args);
+    }
+
+    if (Objects.requireNonNull(rockFSType) == RockFSType.Local) {
+      return null;
     }
 
     return null;

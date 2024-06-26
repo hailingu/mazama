@@ -10,6 +10,8 @@
   <packaging>pom</packaging>
   <modules>
     <module>rock</module>
+    <module>brook</module>
+    <module>brook</module>
   </modules>
 
   <properties>

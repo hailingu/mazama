@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import com.mazama.rock.core.RockFile;
 import java.util.List;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.ql.lib.Node;
 import org.apache.hadoop.hive.ql.parse.ASTNode;
@@ -14,16 +13,26 @@ import org.apache.hadoop.hive.metastore.api.GetTableRequest;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.ql.parse.ParseDriver;
 import org.apache.hadoop.hive.ql.parse.ParseResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Mapping rock file operations to hive table.
+ *
+ * @version 0.0.0.1
  */
 public class HiveFile extends RockFile {
 
-  /** target table */
+  static final Logger LOGGER = LoggerFactory.getLogger(HiveFile.class);
+
+  /**
+   * target table
+   */
   private Table table;
 
-  /** hive meta store client, get or set table metadata*/
+  /**
+   * hive meta store client, get or set table metadata
+   */
   private final HiveMetaStoreClient hiveMetaStoreClient;
 
   public HiveFile(HiveMetaStoreClient hiveMetaStoreClient) {
@@ -40,11 +49,13 @@ public class HiveFile extends RockFile {
   @Override
   protected RockFile open(String... tableArgs) throws Exception {
     if (this.hiveMetaStoreClient == null) {
-      throw new Exception("HiveMetaStoreClient is null");
+      LOGGER.warn("HiveMetaStoreClient is null");
+      return null;
     }
 
     if (tableArgs.length < 2) {
-      throw new Exception("Missing arguments: databaseName, tableName");
+      LOGGER.warn("Missing arguments: databaseName, tableName");
+      return null;
     }
 
     String databaseName = tableArgs[0];
@@ -62,6 +73,7 @@ public class HiveFile extends RockFile {
 
   /**
    * Parse hive sql ddl command to get table metadata, and create a new table.
+   *
    * @param command hive ddl sql command
    * @return {@link RockFile}
    * @throws Exception
@@ -69,65 +81,60 @@ public class HiveFile extends RockFile {
   @Override
   protected RockFile create(String command) throws Exception {
     ParseDriver pd = new ParseDriver();
-    Table table = new Table();
-    StorageDescriptor sd = new StorageDescriptor();
-    table.setSd(sd);
-    List<FieldSchema> cols = Lists.newArrayList();
-    sd.setCols(cols);
-    Partition partition = new Partition();
-    partition.setSd(sd);
+    Table table = null;
+
     try {
       ParseResult result = pd.parse(command);
       ASTNode root = result.getTree();
       for (Node node : root.getChildren()) {
         ASTNode childNode = (ASTNode) node;
         if (childNode.getToken().getType() == HiveParser.TOK_CREATETABLE) {
+          table = new Table();
+          StorageDescriptor sd = new StorageDescriptor();
+          table.setSd(sd);
+
           table.setTableName(childNode.getChild(0).getChild(0).getText());
 
           // Get columns name, type and comment from ast.
           for (Node childChild : childNode.getChildren()) {
             ASTNode childChildNode = (ASTNode) childChild;
             if (childChildNode.getToken().getType() == HiveParser.TOK_TABCOLLIST) {
-              for (Node columnNode : childChildNode.getChildren()) {
-                ASTNode column = (ASTNode) columnNode;
-                String name = column.getChild(0).getText();
-                String type = column.getChild(1).getText();
-                String comment = column.getChild(2).getText();
-                FieldSchema fieldSchema = new FieldSchema(name, type, comment);
-                cols.add(fieldSchema);
-              }
+              List<FieldSchema> cols = Lists.newArrayList();
+              HiveFile.setFieldSchemaFromASTNode(childChildNode, cols);
+              sd.setCols(cols);
             }
 
-            // Get partition columns name and type from ast.
+            // Set partition columns name, type and comment from ast.
             if (childChildNode.getToken().getType() == HiveParser.TOK_TABLEPARTCOLS) {
-              for (Node partitionNode : childChildNode.getChildren()) {
-                ASTNode partitionParams = (ASTNode) partitionNode;
-                String name = partitionParams.getChild(0).getText();
-                String type = partitionParams.getChild(1).getText();
-              }
+              List<FieldSchema> partitions = Lists.newArrayList();
+              HiveFile.setFieldSchemaFromASTNode(childChildNode, partitions);
+              table.setPartitionKeys(partitions);
             }
 
-            //
+            // Set storage property from ast.
             if (childChildNode.getToken().getType() == HiveParser.TOK_TABLEPROPERTIES) {
               for (Node propertyNode : childChildNode.getChildren()) {
                 ASTNode property = (ASTNode) propertyNode;
                 if (property.getToken().getType() == HiveParser.TOK_TABLEPROPLIST) {
-                  for(Node prop : property.getChildren()) {
+                  for (Node prop : property.getChildren()) {
                     ASTNode propNode = (ASTNode) prop;
-                    String name = propNode.getChild(0).getText();
+                    String key = propNode.getChild(0).getText();
                     String value = propNode.getChild(1).getText();
-//                    sd.putToParameters();
+                    sd.putToParameters(key, value);
                   }
                 }
               }
             }
-
           }
         }
       }
-
     } catch (Exception e) {
+      LOGGER.warn("Failed to parse command: {}", command);
       throw new Exception("Failed to parse command: " + command);
+    }
+
+    if (table != null) {
+      hiveMetaStoreClient.createTable(table);
     }
 
     return null;
@@ -146,5 +153,24 @@ public class HiveFile extends RockFile {
   @Override
   protected int copy(RockFile src, RockFile dest) throws Exception {
     return 0;
+  }
+
+  /**
+   * Get field schema from ast node
+   *
+   * @param astNode      ast node describe column name, type and comment
+   * @param fieldSchemas list of parsed field schema from ast node
+   */
+  static void setFieldSchemaFromASTNode(
+      ASTNode astNode,
+      List<FieldSchema> fieldSchemas) {
+    for (Node partitionNode : astNode.getChildren()) {
+      ASTNode partitionParams = (ASTNode) partitionNode;
+      String name = partitionParams.getChild(0).getText();
+      String type = partitionParams.getChild(1).getText();
+      String comment = partitionParams.getChild(2).getText();
+      FieldSchema fieldSchema = new FieldSchema(name, type, comment);
+      fieldSchemas.add(fieldSchema);
+    }
   }
 }
