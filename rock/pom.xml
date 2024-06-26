@@ -104,6 +104,12 @@
       <version>${stax2-api.version}</version>
     </dependency>
 
+    <!-- common -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+
     <!-- logging components -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>

@@ -1,62 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.mazama</groupId>
-    <artifactId>mazama</artifactId>
-    <version>0.0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <modules>
-        <module>rock</module>
-    </modules>
+  <groupId>com.mazama</groupId>
+  <artifactId>mazama</artifactId>
+  <version>0.0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <modules>
+    <module>rock</module>
+  </modules>
 
-    <properties>
-        <junit-jupiter-api.version>5.11.0-M2</junit-jupiter-api.version>
-        <junit-jupiter-engine.version>5.11.0-M2</junit-jupiter-engine.version>
-        <log4j-api.version>2.23.1</log4j-api.version>
-        <log4j-core.version>2.23.1</log4j-core.version>
-        <log4j-slf4j2-impl.version>2.23.1</log4j-slf4j2-impl.version>
-    </properties>
+  <properties>
+    <junit-jupiter-api.version>5.11.0-M2</junit-jupiter-api.version>
+    <junit-jupiter-engine.version>5.11.0-M2</junit-jupiter-engine.version>
+    <log4j-api.version>2.23.1</log4j-api.version>
+    <log4j-core.version>2.23.1</log4j-core.version>
+    <log4j-slf4j2-impl.version>2.23.1</log4j-slf4j2-impl.version>
+    <guava.version>33.2.1-jre</guava.version>
+  </properties>
 
-    <dependencyManagement>
-        <dependencies>
+  <dependencyManagement>
+    <dependencies>
 
-            <!-- logging components -->
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j-api.version}</version>
-            </dependency>
+      <!-- common -->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j-core.version}</version>
-            </dependency>
+      <!-- logging components -->
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-api</artifactId>
+        <version>${log4j-api.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j2-impl</artifactId>
-                <version>${log4j-slf4j2-impl.version}</version>
-            </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
+        <version>${log4j-core.version}</version>
+      </dependency>
 
-            <!-- junit components -->
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${junit-jupiter-api.version}</version>
-                <scope>test</scope>
-            </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-slf4j2-impl</artifactId>
+        <version>${log4j-slf4j2-impl.version}</version>
+      </dependency>
 
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${junit-jupiter-engine.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+      <!-- junit components -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit-jupiter-api.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit-jupiter-engine.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
 </project>
